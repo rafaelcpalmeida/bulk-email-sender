@@ -1,0 +1,16 @@
+{
+    "variables": [
+        {
+            "Variable1": "Value1",
+            "Variable2": "Value2"
+        },
+        {
+            "Variable1": "Value1",
+            "Variable2": "Value2"
+        },
+        {
+            "Variable1": "Value1",
+            "Variable2": "Value2"
+        }
+    ]
+}
