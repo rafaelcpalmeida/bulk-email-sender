@@ -1,14 +1,20 @@
 {
     "variables": [
         {
+            "recipient-name": "Email Receiver",
+            "recipient-email": "receiver-1@another-address.com",
             "Variable1": "Value1",
             "Variable2": "Value2"
         },
         {
+            "recipient-name": "Email Receiver",
+            "recipient-email": "receiver-2@another-address.com",
             "Variable1": "Value1",
             "Variable2": "Value2"
         },
         {
+            "recipient-name": "Email Receiver",
+            "recipient-email": "receiver-2@another-address.com",
             "Variable1": "Value1",
             "Variable2": "Value2"
         }

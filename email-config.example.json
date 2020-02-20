@@ -4,7 +4,5 @@
     "host": "mail.host.com",
     "port": "587",
     "sender-name": "Email Sender",
-    "sender-email": "sender@address.com",
-    "recipient-name": "Email Receiver",
-    "recipient-email": "receiver@another-address.com"
+    "sender-email": "sender@address.com"
 }
