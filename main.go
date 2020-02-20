@@ -11,14 +11,12 @@ import (
 )
 
 type EmailConfig struct {
-	User           string `json:"user"`
-	Password       string `json:"password"`
-	Host           string `json:"host"`
-	Port           string `json:"port"`
-	SenderName     string `json:"sender-name"`
-	SenderEmail    string `json:"sender-email"`
-	RecipientName  string `json:"recipient-name"`
-	RecipientEmail string `json:"recipient-email"`
+	User        string `json:"user"`
+	Password    string `json:"password"`
+	Host        string `json:"host"`
+	Port        string `json:"port"`
+	SenderName  string `json:"sender-name"`
+	SenderEmail string `json:"sender-email"`
 }
 
 type EmailVariables struct {
@@ -52,19 +50,20 @@ func main() {
 	for k := range emailVariables.Variables {
 
 		vars := make(map[string]interface{})
-		vars["RecipientName"] = emailConfig.RecipientName
-		vars["RecipientEmail"] = emailConfig.RecipientEmail
 		vars["SenderName"] = emailConfig.SenderName
 		vars["SenderEmail"] = emailConfig.SenderEmail
 
 		for _k := range emailVariables.Variables[k] {
 			if str, ok := emailVariables.Variables[k][_k].(string); ok {
-				fmt.Println()
 				vars[_k] = str
 			}
 		}
 
-		emailTemplate, err := template.ParseFiles("email.tmpl")
+		emailTemplate, err := template.New("email.tmpl").Funcs(template.FuncMap{
+			"emailAddressStructure": func(str string) template.HTML {
+				return template.HTML(fmt.Sprintf("<%s>", str))
+			},
+		}).ParseFiles("email.tmpl")
 
 		if err != nil {
 			fmt.Println(err)
@@ -77,13 +76,14 @@ func main() {
 			fmt.Println(err)
 		}
 
-		fmt.Println("Trying...")
-		if err := smtp.SendMail(fmt.Sprintf("%s:%s", emailConfig.Host, emailConfig.Port), auth, emailConfig.User, []string{emailConfig.RecipientEmail}, []byte(emailBytes.String())); err != nil {
+		fmt.Println("Sending email to: " + vars["RecipientEmail"].(string) + "...")
+		if err := smtp.SendMail(fmt.Sprintf("%s:%s", emailConfig.Host, emailConfig.Port), auth, emailConfig.User, []string{vars["RecipientEmail"].(string)}, []byte(emailBytes.String())); err != nil {
 			fmt.Println("Error SendMail: ", err)
 			os.Exit(1)
 		}
 
-		fmt.Println("Email Sent!")
+		fmt.Println("Email sent!")
+		fmt.Println()
 
 		vars = nil
 	}

@@ -1,4 +1,4 @@
-To: "{{.RecipientName}}" <{{.RecipientEmail}}>
-From: "{{.SenderName}}" <{{.SenderEmail}}>
+To: "{{.RecipientName}}" {{emailAddressStructure .RecipientEmail}}
+From: "{{.SenderName}}" {{emailAddressStructure .SenderEmail}}
 Subject: Test
 Hey {{.Variable1}}, looking forward to seeing you at {{.Variable2}}.
