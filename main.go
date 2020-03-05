@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/smtp"
 	"os"
 )
@@ -24,53 +23,64 @@ type EmailVariables struct {
 }
 
 func main() {
-	var emailConfig EmailConfig
-	var emailVariables EmailVariables
+	emailConfig, err := initEmailConfig("email-config.json")
+	if err != nil {
+		printErrorAndDie("Error initiating email configuration: ", err)
+	}
 
-	setupVars(&emailConfig, &emailVariables)
+	emailVariables, err := initEmailVariables("email-data.json")
+	if err != nil {
+		printErrorAndDie("Error initiating variable configuration: ", err)
+	}
 
-	auth := configEmailAuth(emailConfig)
+	smtpAuth := configEmailAuth(emailConfig)
 
-	for k := range emailVariables.Variables {
-		vars := configureEmailVariables(emailConfig, k, emailVariables)
+	err = emailVariables.sendEmails(emailConfig, smtpAuth)
 
-		emailTemplate := configureEmailTemplate(vars)
-
-		fmt.Println("Sending email to: " + vars["RecipientEmail"].(string) + "...")
-		if err := smtp.SendMail(fmt.Sprintf("%s:%s", emailConfig.Host, emailConfig.Port), auth, emailConfig.User, []string{vars["RecipientEmail"].(string)}, []byte(emailTemplate)); err != nil {
-			printErrorAndDie(err)
-		}
-
-		fmt.Println("Email sent!")
-		fmt.Println()
-
-		vars = nil
+	if err != nil {
+		printErrorAndDie("Error sending email: ", err)
 	}
 }
 
-func printErrorAndDie(err error) {
-	fmt.Println(err)
+func printErrorAndDie(description string, err error) {
+	fmt.Println(description + err.Error())
 	os.Exit(1)
 }
 
-func setupVars(emailConfig *EmailConfig, emailVariables *EmailVariables) {
-	jsonFile, err := os.Open("email-config.json")
+func initEmailConfig(filename string) (EmailConfig, error) {
+	jsonFile, err := os.Open(filename)
 
 	if err != nil {
-		printErrorAndDie(err)
+		return EmailConfig{}, err
 	}
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &emailConfig)
+	defer jsonFile.Close()
 
-	jsonFile, err = os.Open("email-data.json")
+	var emailConfig EmailConfig
+
+	if err = json.NewDecoder(jsonFile).Decode(&emailConfig); err != nil {
+		return EmailConfig{}, err
+	}
+
+	return emailConfig, nil
+}
+
+func initEmailVariables(filename string) (EmailVariables, error) {
+	jsonFile, err := os.Open(filename)
 
 	if err != nil {
-		printErrorAndDie(err)
+		return EmailVariables{}, err
 	}
 
-	byteValue, _ = ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &emailVariables)
+	defer jsonFile.Close()
+
+	var emailVariables EmailVariables
+
+	if err = json.NewDecoder(jsonFile).Decode(&emailVariables); err != nil {
+		return EmailVariables{}, err
+	}
+
+	return emailVariables, nil
 }
 
 func configEmailAuth(emailConfig EmailConfig) smtp.Auth {
@@ -92,7 +102,7 @@ func configureEmailVariables(emailConfig EmailConfig, k int, emailVariables Emai
 	return vars
 }
 
-func configureEmailTemplate(vars map[string]interface{}) string {
+func configureEmailTemplate(vars map[string]interface{}) (string, error) {
 	template, err := template.New("email.tmpl").Funcs(template.FuncMap{
 		"emailAddressStructure": func(str string) template.HTML {
 			return template.HTML(fmt.Sprintf("<%s>", str))
@@ -100,15 +110,39 @@ func configureEmailTemplate(vars map[string]interface{}) string {
 	}).ParseFiles("email.tmpl")
 
 	if err != nil {
-		printErrorAndDie(err)
+		return "", err
 	}
 
 	var emailBytes bytes.Buffer
 	err = template.Execute(&emailBytes, vars)
 
 	if err != nil {
-		printErrorAndDie(err)
+		return "", err
 	}
 
-	return emailBytes.String()
+	return emailBytes.String(), nil
+}
+
+func (emailVariables *EmailVariables) sendEmails(emailConfig EmailConfig, smtpAuth smtp.Auth) error {
+	for k := range emailVariables.Variables {
+		vars := configureEmailVariables(emailConfig, k, *emailVariables)
+
+		emailTemplate, err := configureEmailTemplate(vars)
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("Sending email to: " + vars["RecipientEmail"].(string) + "...")
+		if err := smtp.SendMail(fmt.Sprintf("%s:%s", emailConfig.Host, emailConfig.Port), smtpAuth, emailConfig.User, []string{vars["RecipientEmail"].(string)}, []byte(emailTemplate)); err != nil {
+			return err
+		}
+
+		fmt.Println("Email sent!")
+		fmt.Println()
+
+		vars = nil
+	}
+
+	return nil
 }
