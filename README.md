@@ -1,4 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rafaelcpalmeida/bulk-email-sender)](https://goreportcard.com/report/github.com/rafaelcpalmeida/bulk-email-sender)
+![Go](https://github.com/rafaelcpalmeida/bulk-email-sender/workflows/Go/badge.svg)
 
 # Bulk Email Sender
 
