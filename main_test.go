@@ -11,7 +11,7 @@ func TestInitEmailConfig(t *testing.T) {
 		Host:        "mail.host.com",
 		Port:        "587",
 		SenderName:  "Email Sender",
-		SenderEmail: "sender@address.com",
+		SenderEmail: "sender@address.co",
 	}
 	invalidEmailConfigs := EmailConfig{}
 
