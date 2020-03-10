@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/smtp"
 	"os"
 )
 
+// EmailConfig struct holds every data required to authenticate on an SMTP Server and also identifies the sender's name and email
 type EmailConfig struct {
 	User        string `json:"user"`
 	Password    string `json:"password"`
@@ -18,17 +20,30 @@ type EmailConfig struct {
 	SenderEmail string `json:"sender-email"`
 }
 
+// EmailVariables struct holds every variable name and its corresponding value it's meant to be replaced on every email body sent.
 type EmailVariables struct {
 	Variables []map[string]interface{} `json:"variables"`
 }
 
 func main() {
-	emailConfig, err := initEmailConfig("email-config.json")
+	emailConfigData, err := openAndReadFile("email-config.json")
+
+	if err != nil {
+		printErrorAndDie("Error reading email configuration: ", err)
+	}
+
+	emailVariablesData, err := openAndReadFile("email-data.json")
+	if err != nil {
+		printErrorAndDie("Error reading variable configuration: ", err)
+	}
+
+	emailConfig, err := initEmailConfig(emailConfigData)
+
 	if err != nil {
 		printErrorAndDie("Error initiating email configuration: ", err)
 	}
 
-	emailVariables, err := initEmailVariables("email-data.json")
+	emailVariables, err := initEmailVariables(emailVariablesData)
 	if err != nil {
 		printErrorAndDie("Error initiating variable configuration: ", err)
 	}
@@ -47,36 +62,30 @@ func printErrorAndDie(description string, err error) {
 	os.Exit(1)
 }
 
-func initEmailConfig(filename string) (EmailConfig, error) {
-	jsonFile, err := os.Open(filename)
+func openAndReadFile(filename string) ([]byte, error) {
+	jsonFile, err := ioutil.ReadFile(filename)
 
 	if err != nil {
-		return EmailConfig{}, err
+		return nil, err
 	}
 
-	defer jsonFile.Close()
+	return jsonFile, nil
+}
 
+func initEmailConfig(fileData []byte) (EmailConfig, error) {
 	var emailConfig EmailConfig
 
-	if err = json.NewDecoder(jsonFile).Decode(&emailConfig); err != nil {
+	if err := json.Unmarshal(fileData, &emailConfig); err != nil {
 		return EmailConfig{}, err
 	}
 
 	return emailConfig, nil
 }
 
-func initEmailVariables(filename string) (EmailVariables, error) {
-	jsonFile, err := os.Open(filename)
-
-	if err != nil {
-		return EmailVariables{}, err
-	}
-
-	defer jsonFile.Close()
-
+func initEmailVariables(fileData []byte) (EmailVariables, error) {
 	var emailVariables EmailVariables
 
-	if err = json.NewDecoder(jsonFile).Decode(&emailVariables); err != nil {
+	if err := json.Unmarshal(fileData, &emailVariables); err != nil {
 		return EmailVariables{}, err
 	}
 
