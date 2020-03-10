@@ -14,7 +14,7 @@
         },
         {
             "RecipientName": "Email Receiver",
-            "RecipientEmail": "receiver-2@another-address.com",
+            "RecipientEmail": "receiver-3@another-address.com",
             "Variable1": "Value1",
             "Variable2": "Value2"
         }
